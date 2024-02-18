@@ -8,12 +8,12 @@ RUN go mod download && go mod verify
 COPY . .
 
 ENV CGO_ENABLED=0
-RUN go build -v -o /usr/local/bin/gnark-mbu .
+RUN go build -v -o /usr/local/bin/light-prover .
 
 FROM gcr.io/distroless/base-debian11:nonroot
 
-COPY --from=builder /usr/local/bin/gnark-mbu /usr/local/bin/gnark-mbu
-VOLUME /mtb
+COPY --from=builder /usr/local/bin/light-prover /usr/local/bin/light-prover
+VOLUME /keys
 
-ENTRYPOINT [ "gnark-mbu" ]
-CMD [ "start", "--keys-file", "/mtb/keys"]
+ENTRYPOINT [ "light-prover" ]
+CMD [ "start", "--keys-file", "/keys/circuit_26_1"]

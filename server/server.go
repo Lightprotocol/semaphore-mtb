@@ -5,12 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"light/light-prover/logging"
+	"light/light-prover/prover"
 	"net/http"
-	"worldcoin/gnark-mbu/logging"
-
-	"worldcoin/gnark-mbu/prover"
-
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	//"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Error struct {
@@ -18,9 +16,6 @@ type Error struct {
 	Code       string
 	Message    string
 }
-
-const DeletionMode = "deletion"
-const InsertionMode = "insertion"
 
 func malformedBodyError(err error) *Error {
 	return &Error{StatusCode: http.StatusBadRequest, Code: "malformed_body", Message: err.Error()}
@@ -56,7 +51,6 @@ func (error *Error) send(w http.ResponseWriter) {
 type Config struct {
 	ProverAddress  string
 	MetricsAddress string
-	Mode           string
 }
 
 func spawnServerJob(server *http.Server, label string) RunningJob {
@@ -77,15 +71,15 @@ func spawnServerJob(server *http.Server, label string) RunningJob {
 	return SpawnJob(start, shutdown)
 }
 
-func Run(config *Config, provingSystem *prover.ProvingSystem) RunningJob {
+func Run(config *Config, provingSystem []*prover.ProvingSystem) RunningJob {
 	metricsMux := http.NewServeMux()
-	metricsMux.Handle("/metrics", promhttp.Handler())
+	//metricsMux.Handle("/metrics", promhttp.Handler())
 	metricsServer := &http.Server{Addr: config.MetricsAddress, Handler: metricsMux}
 	metricsJob := spawnServerJob(metricsServer, "metrics server")
 	logging.Logger().Info().Str("addr", config.MetricsAddress).Msg("metrics server started")
 
 	proverMux := http.NewServeMux()
-	proverMux.Handle("/prove", proveHandler{provingSystem: provingSystem, mode: config.Mode})
+	proverMux.Handle("/prove", proveHandler{provingSystem: provingSystem})
 	proverServer := &http.Server{Addr: config.ProverAddress, Handler: proverMux}
 	proverJob := spawnServerJob(proverServer, "prover server")
 	logging.Logger().Info().Str("addr", config.ProverAddress).Msg("app server started")
@@ -94,8 +88,7 @@ func Run(config *Config, provingSystem *prover.ProvingSystem) RunningJob {
 }
 
 type proveHandler struct {
-	mode          string
-	provingSystem *prover.ProvingSystem
+	provingSystem []*prover.ProvingSystem
 }
 
 func (handler proveHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -111,27 +104,29 @@ func (handler proveHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var proof *prover.Proof
-	if handler.mode == InsertionMode {
-		var params prover.InsertionParameters
+	var params prover.InsertionParameters
 
-		err = json.Unmarshal(buf, &params)
-		if err != nil {
-			malformedBodyError(err).send(w)
-			return
-		}
-
-		proof, err = handler.provingSystem.ProveInsertion(&params)
-	} else if handler.mode == DeletionMode {
-		var params prover.DeletionParameters
-
-		err = json.Unmarshal(buf, &params)
-		if err != nil {
-			malformedBodyError(err).send(w)
-			return
-		}
-
-		proof, err = handler.provingSystem.ProveDeletion(&params)
+	err = json.Unmarshal(buf, &params)
+	if err != nil {
+		malformedBodyError(err).send(w)
+		return
 	}
+
+	var numberOfUtxos = uint32(len(params.Root))
+	var ps *prover.ProvingSystem
+	for _, provingSystem := range handler.provingSystem {
+		if provingSystem.NumberOfUtxos == numberOfUtxos {
+			ps = provingSystem
+			break
+		}
+	}
+
+	if ps == nil {
+		provingError(fmt.Errorf("no proving system for %d utxos", numberOfUtxos)).send(w)
+		return
+	}
+
+	proof, err = ps.ProveInsertion(&params)
 
 	if err != nil {
 		provingError(err).send(w)

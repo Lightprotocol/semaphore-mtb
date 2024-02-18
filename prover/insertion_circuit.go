@@ -1,91 +1,68 @@
 package prover
 
 import (
-	"worldcoin/gnark-mbu/prover/keccak"
-
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/frontend"
 	"github.com/consensys/gnark/frontend/cs/r1cs"
 	"github.com/reilabs/gnark-lean-extractor/v2/abstractor"
 )
 
-type InsertionMbuCircuit struct {
-	// single public input
-	InputHash frontend.Variable `gnark:",public"`
-
-	// private inputs, but used as public inputs
-	StartIndex frontend.Variable   `gnark:"input"`
-	PreRoot    frontend.Variable   `gnark:"input"`
-	PostRoot   frontend.Variable   `gnark:"input"`
-	IdComms    []frontend.Variable `gnark:"input"`
+type InsertionCircuit struct {
+	// public inputs
+	Root []frontend.Variable `gnark:",public"`
+	Leaf []frontend.Variable `gnark:",public"`
 
 	// private inputs
-	MerkleProofs [][]frontend.Variable `gnark:"input"`
+	InPathIndices  []frontend.Variable   `gnark:"input"`
+	InPathElements [][]frontend.Variable `gnark:"input"`
 
-	BatchSize int
-	Depth     int
+	NumberOfUtxos int
+	Depth         int
 }
 
-func (circuit *InsertionMbuCircuit) Define(api frontend.API) error {
-	// Hash private inputs.
-	// We keccak hash all input to save verification gas. Inputs are arranged as follows:
-	// StartIndex || PreRoot || PostRoot || IdComms[0] || IdComms[1] || ... || IdComms[batchSize-1]
-	//     32	  ||   256   ||   256    ||    256     ||    256     || ... ||     256 bits
-	var bits []frontend.Variable
-
-	// We convert all the inputs to the keccak hash to use big-endian (network) byte
-	// ordering so that it agrees with Solidity. This ensures that we don't have to
-	// perform the conversion inside the contract and hence save on gas.
-	bits_start := abstractor.Call1(api, ToReducedBigEndian{Variable: circuit.StartIndex, Size: 32})
-	bits = append(bits, bits_start...)
-
-	bits_pre := abstractor.Call1(api, ToReducedBigEndian{Variable: circuit.PreRoot, Size: 256})
-	bits = append(bits, bits_pre...)
-
-	bits_post := abstractor.Call1(api, ToReducedBigEndian{Variable: circuit.PostRoot, Size: 256})
-	bits = append(bits, bits_post...)
-
-	for i := 0; i < circuit.BatchSize; i++ {
-		bits_id := abstractor.Call1(api, ToReducedBigEndian{Variable: circuit.IdComms[i], Size: 256})
-		bits = append(bits, bits_id...)
+func (circuit *InsertionCircuit) Define(api frontend.API) error {
+	for i := 0; i < circuit.NumberOfUtxos; i++ {
+		api.AssertIsEqual(circuit.Root[i], circuit.Root[i])
+		api.AssertIsEqual(circuit.Leaf[i], circuit.Leaf[i])
+		api.AssertIsEqual(circuit.InPathIndices[i], circuit.InPathIndices[i])
+		for j := 0; j < circuit.Depth; j++ {
+			api.AssertIsEqual(circuit.InPathElements[i][j], circuit.InPathElements[i][j])
+		}
 	}
 
-	hash := keccak.NewKeccak256(api, (circuit.BatchSize+2)*256+32, bits...)
-	sum := abstractor.Call(api, FromBinaryBigEndian{Variable: hash})
+	// Actual merkle proof verification.
+	_ = abstractor.Call1(api, InsertionProof{
+		Root:           circuit.Root,
+		Leaf:           circuit.Leaf,
+		InPathElements: circuit.InPathElements,
+		InPathIndices:  circuit.InPathIndices,
 
-	// The same endianness conversion has been performed in the hash generation
-	// externally, so we can safely assert their equality here.
-	api.AssertIsEqual(circuit.InputHash, sum)
-
-	// Actual batch merkle proof verification.
-	root := abstractor.Call(api, InsertionProof{
-		StartIndex: circuit.StartIndex,
-		PreRoot:    circuit.PreRoot,
-		IdComms:    circuit.IdComms,
-
-		MerkleProofs: circuit.MerkleProofs,
-
-		BatchSize: circuit.BatchSize,
-		Depth:     circuit.Depth,
+		NumberOfUtxos: circuit.NumberOfUtxos,
+		Depth:         circuit.Depth,
 	})
-
-	// Final root needs to match.
-	api.AssertIsEqual(root, circuit.PostRoot)
 
 	return nil
 }
 
-func ImportInsertionSetup(treeDepth uint32, batchSize uint32, pkPath string, vkPath string) (*ProvingSystem, error) {
-	proofs := make([][]frontend.Variable, batchSize)
-	for i := 0; i < int(batchSize); i++ {
-		proofs[i] = make([]frontend.Variable, treeDepth)
+func ImportInsertionSetup(treeDepth uint32, numberOfUtxos uint32, pkPath string, vkPath string) (*ProvingSystem, error) {
+	root := make([]frontend.Variable, numberOfUtxos)
+	leaf := make([]frontend.Variable, numberOfUtxos)
+	inPathIndices := make([]frontend.Variable, numberOfUtxos)
+	inPathElements := make([][]frontend.Variable, numberOfUtxos)
+
+	for i := 0; i < int(numberOfUtxos); i++ {
+		inPathElements[i] = make([]frontend.Variable, treeDepth)
 	}
-	circuit := InsertionMbuCircuit{
-		Depth:        int(treeDepth),
-		BatchSize:    int(batchSize),
-		IdComms:      make([]frontend.Variable, batchSize),
-		MerkleProofs: proofs,
+
+	circuit := InsertionCircuit{
+		Depth:          int(treeDepth),
+		NumberOfUtxos:  int(numberOfUtxos),
+		Root:           root,
+		Leaf:           leaf,
+		InPathIndices:  inPathIndices,
+		InPathElements: inPathElements,
 	}
+
 	ccs, err := frontend.Compile(ecc.BN254.ScalarField(), r1cs.NewBuilder, &circuit)
 	if err != nil {
 		return nil, err
@@ -103,5 +80,5 @@ func ImportInsertionSetup(treeDepth uint32, batchSize uint32, pkPath string, vkP
 		return nil, err
 	}
 
-	return &ProvingSystem{treeDepth, batchSize, pk, vk, ccs}, nil
+	return &ProvingSystem{treeDepth, numberOfUtxos, pk, vk, ccs}, nil
 }
