@@ -116,11 +116,13 @@ func (ps *ProvingSystem) ProveInsertion(params *InsertionParameters) (*Proof, er
 		IdComms:      idComms,
 		MerkleProofs: proofs,
 	}
+	logging.Logger().Info().Msg("generating proof")
+
 	witness, err := frontend.NewWitness(&assignment, ecc.BN254.ScalarField())
 	if err != nil {
 		return nil, err
 	}
-	logging.Logger().Info().Msg("generating proof")
+
 	proof, err := groth16.Prove(ps.ConstraintSystem, ps.ProvingKey, witness)
 	if err != nil {
 		return nil, err

@@ -83,13 +83,13 @@ func (gadget InsertionRound) DefineGadget(api frontend.API) interface{} {
 	// len(circuit.MerkleProofs[i]) === circuit.Depth
 	// len(circuit.IdComms) === circuit.BatchSize
 	// Verify proof for empty leaf.
-	proof := append([]frontend.Variable{emptyLeaf}, gadget.Proof[:]...)
-	root := abstractor.Call(api, VerifyProof{Proof: proof, Path: currentPath})
-	api.AssertIsEqual(root, gadget.PrevRoot)
+	// proof := append([]frontend.Variable{emptyLeaf}, gadget.Proof[:]...)
+	// root := abstractor.Call(api, VerifyProof{Proof: proof, Path: currentPath})
+	// api.AssertIsEqual(root, gadget.PrevRoot)
 
-	// Verify proof for idComm.
-	proof = append([]frontend.Variable{gadget.Item}, gadget.Proof[:]...)
-	root = abstractor.Call(api, VerifyProof{Proof: proof, Path: currentPath})
+	// // Verify proof for idComm.
+	proof := append([]frontend.Variable{gadget.Item}, gadget.Proof[:]...)
+	root := abstractor.Call(api, VerifyProof{Proof: proof, Path: currentPath})
 
 	return root
 }

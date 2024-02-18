@@ -8,3 +8,6 @@ formal-verification/.cache
 formal-verification/lean-packages/*
 formal-verification/lake-packages/*
 !formal-verification/lake-manifest.json
+
+
+circuit22_*
