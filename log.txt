@@ -1,0 +1,101 @@
+init 1...
+init 1...
+{"level":"info","time":"2024-02-18T19:49:11Z","message":"Reading proving system from file"}
+{"level":"info","treeDepth":22,"batchSize":1,"time":"2024-02-18T19:49:11Z","message":"Read proving system"}
+{"level":"info","addr":"localhost:9998","time":"2024-02-18T19:49:11Z","message":"metrics server started"}
+{"level":"info","addr":"localhost:3001","time":"2024-02-18T19:49:11Z","message":"app server started"}
+{"level":"info","time":"2024-02-18T19:49:12Z","message":"received prove request"}
+{"level":"info","time":"2024-02-18T19:49:12Z","message":"generating proof"}
+{"level":"debug","nbConstraints":5352,"backend":"groth16","took":4.428292,"time":"2024-02-18T19:49:12Z","message":"constraint system solver done"}
+{"level":"debug","curve":"bn254","nbConstraints":5352,"backend":"groth16","took":34.439167,"time":"2024-02-18T19:49:12Z","message":"prover done"}
+{"level":"info","time":"2024-02-18T19:49:12Z","message":"proof generated successfully"}
+init 2...
+{"level":"info","time":"2024-02-18T19:49:15Z","message":"Reading proving system from file"}
+{"level":"info","treeDepth":22,"batchSize":2,"time":"2024-02-18T19:49:15Z","message":"Read proving system"}
+{"level":"info","addr":"localhost:9998","time":"2024-02-18T19:49:15Z","message":"metrics server started"}
+{"level":"info","addr":"localhost:3001","time":"2024-02-18T19:49:15Z","message":"app server started"}
+{"level":"info","time":"2024-02-18T19:49:17Z","message":"received prove request"}
+{"level":"info","time":"2024-02-18T19:49:17Z","message":"generating proof"}
+{"level":"debug","nbConstraints":10699,"backend":"groth16","took":8.824917,"time":"2024-02-18T19:49:17Z","message":"constraint system solver done"}
+{"level":"debug","curve":"bn254","nbConstraints":10699,"backend":"groth16","took":51.879333,"time":"2024-02-18T19:49:17Z","message":"prover done"}
+{"level":"info","time":"2024-02-18T19:49:17Z","message":"proof generated successfully"}
+init 3...
+{"level":"info","time":"2024-02-18T19:49:20Z","message":"Reading proving system from file"}
+{"level":"info","treeDepth":22,"batchSize":3,"time":"2024-02-18T19:49:20Z","message":"Read proving system"}
+{"level":"info","addr":"localhost:9998","time":"2024-02-18T19:49:20Z","message":"metrics server started"}
+{"level":"info","addr":"localhost:3001","time":"2024-02-18T19:49:20Z","message":"app server started"}
+{"level":"info","time":"2024-02-18T19:49:23Z","message":"received prove request"}
+{"level":"info","time":"2024-02-18T19:49:23Z","message":"generating proof"}
+{"level":"debug","nbConstraints":16046,"backend":"groth16","took":13.232,"time":"2024-02-18T19:49:23Z","message":"constraint system solver done"}
+{"level":"debug","curve":"bn254","nbConstraints":16046,"backend":"groth16","took":66.157667,"time":"2024-02-18T19:49:23Z","message":"prover done"}
+{"level":"info","time":"2024-02-18T19:49:23Z","message":"proof generated successfully"}
+init 4...
+{"level":"info","time":"2024-02-18T19:49:26Z","message":"Reading proving system from file"}
+{"level":"info","treeDepth":22,"batchSize":4,"time":"2024-02-18T19:49:27Z","message":"Read proving system"}
+{"level":"info","addr":"localhost:9998","time":"2024-02-18T19:49:27Z","message":"metrics server started"}
+{"level":"info","addr":"localhost:3001","time":"2024-02-18T19:49:27Z","message":"app server started"}
+{"level":"info","time":"2024-02-18T19:49:30Z","message":"received prove request"}
+{"level":"info","time":"2024-02-18T19:49:30Z","message":"generating proof"}
+{"level":"debug","nbConstraints":21393,"backend":"groth16","took":17.466209,"time":"2024-02-18T19:49:30Z","message":"constraint system solver done"}
+{"level":"debug","curve":"bn254","nbConstraints":21393,"backend":"groth16","took":92.492417,"time":"2024-02-18T19:49:30Z","message":"prover done"}
+{"level":"info","time":"2024-02-18T19:49:30Z","message":"proof generated successfully"}
+init 5...
+{"level":"info","time":"2024-02-18T19:49:34Z","message":"Reading proving system from file"}
+{"level":"info","treeDepth":22,"batchSize":5,"time":"2024-02-18T19:49:34Z","message":"Read proving system"}
+{"level":"info","addr":"localhost:9998","time":"2024-02-18T19:49:34Z","message":"metrics server started"}
+{"level":"info","addr":"localhost:3001","time":"2024-02-18T19:49:34Z","message":"app server started"}
+{"level":"info","time":"2024-02-18T19:49:39Z","message":"received prove request"}
+{"level":"info","time":"2024-02-18T19:49:39Z","message":"generating proof"}
+{"level":"debug","nbConstraints":26740,"backend":"groth16","took":21.4335,"time":"2024-02-18T19:49:39Z","message":"constraint system solver done"}
+{"level":"debug","curve":"bn254","nbConstraints":26740,"backend":"groth16","took":109.036875,"time":"2024-02-18T19:49:39Z","message":"prover done"}
+{"level":"info","time":"2024-02-18T19:49:39Z","message":"proof generated successfully"}
+init 6...
+{"level":"info","time":"2024-02-18T19:49:43Z","message":"Reading proving system from file"}
+{"level":"info","treeDepth":22,"batchSize":6,"time":"2024-02-18T19:49:44Z","message":"Read proving system"}
+{"level":"info","addr":"localhost:9998","time":"2024-02-18T19:49:44Z","message":"metrics server started"}
+{"level":"info","addr":"localhost:3001","time":"2024-02-18T19:49:44Z","message":"app server started"}
+{"level":"info","time":"2024-02-18T19:49:49Z","message":"received prove request"}
+{"level":"info","time":"2024-02-18T19:49:49Z","message":"generating proof"}
+{"level":"debug","nbConstraints":32087,"backend":"groth16","took":24.708875,"time":"2024-02-18T19:49:49Z","message":"constraint system solver done"}
+{"level":"debug","curve":"bn254","nbConstraints":32087,"backend":"groth16","took":117.369584,"time":"2024-02-18T19:49:49Z","message":"prover done"}
+{"level":"info","time":"2024-02-18T19:49:49Z","message":"proof generated successfully"}
+init 7...
+{"level":"info","time":"2024-02-18T19:49:54Z","message":"Reading proving system from file"}
+{"level":"info","treeDepth":22,"batchSize":7,"time":"2024-02-18T19:49:54Z","message":"Read proving system"}
+{"level":"info","addr":"localhost:9998","time":"2024-02-18T19:49:54Z","message":"metrics server started"}
+{"level":"info","addr":"localhost:3001","time":"2024-02-18T19:49:54Z","message":"app server started"}
+{"level":"info","time":"2024-02-18T19:50:01Z","message":"received prove request"}
+{"level":"info","time":"2024-02-18T19:50:01Z","message":"generating proof"}
+{"level":"debug","nbConstraints":37434,"backend":"groth16","took":28.070416,"time":"2024-02-18T19:50:01Z","message":"constraint system solver done"}
+{"level":"debug","curve":"bn254","nbConstraints":37434,"backend":"groth16","took":157.8505,"time":"2024-02-18T19:50:01Z","message":"prover done"}
+{"level":"info","time":"2024-02-18T19:50:01Z","message":"proof generated successfully"}
+init 8...
+{"level":"info","time":"2024-02-18T19:50:06Z","message":"Reading proving system from file"}
+{"level":"info","treeDepth":22,"batchSize":8,"time":"2024-02-18T19:50:06Z","message":"Read proving system"}
+{"level":"info","addr":"localhost:9998","time":"2024-02-18T19:50:06Z","message":"metrics server started"}
+{"level":"info","addr":"localhost:3001","time":"2024-02-18T19:50:06Z","message":"app server started"}
+{"level":"info","time":"2024-02-18T19:50:14Z","message":"received prove request"}
+{"level":"info","time":"2024-02-18T19:50:14Z","message":"generating proof"}
+{"level":"debug","nbConstraints":42781,"backend":"groth16","took":31.808167,"time":"2024-02-18T19:50:14Z","message":"constraint system solver done"}
+{"level":"debug","curve":"bn254","nbConstraints":42781,"backend":"groth16","took":166.78225,"time":"2024-02-18T19:50:14Z","message":"prover done"}
+{"level":"info","time":"2024-02-18T19:50:14Z","message":"proof generated successfully"}
+init 9...
+{"level":"info","time":"2024-02-18T19:50:19Z","message":"Reading proving system from file"}
+{"level":"info","treeDepth":22,"batchSize":9,"time":"2024-02-18T19:50:20Z","message":"Read proving system"}
+{"level":"info","addr":"localhost:9998","time":"2024-02-18T19:50:20Z","message":"metrics server started"}
+{"level":"info","addr":"localhost:3001","time":"2024-02-18T19:50:20Z","message":"app server started"}
+{"level":"info","time":"2024-02-18T19:50:28Z","message":"received prove request"}
+{"level":"info","time":"2024-02-18T19:50:28Z","message":"generating proof"}
+{"level":"debug","nbConstraints":48128,"backend":"groth16","took":35.993666,"time":"2024-02-18T19:50:28Z","message":"constraint system solver done"}
+{"level":"debug","curve":"bn254","nbConstraints":48128,"backend":"groth16","took":175.690334,"time":"2024-02-18T19:50:28Z","message":"prover done"}
+{"level":"info","time":"2024-02-18T19:50:28Z","message":"proof generated successfully"}
+init 10...
+{"level":"info","time":"2024-02-18T19:50:33Z","message":"Reading proving system from file"}
+{"level":"info","treeDepth":22,"batchSize":10,"time":"2024-02-18T19:50:34Z","message":"Read proving system"}
+{"level":"info","addr":"localhost:9998","time":"2024-02-18T19:50:34Z","message":"metrics server started"}
+{"level":"info","addr":"localhost:3001","time":"2024-02-18T19:50:34Z","message":"app server started"}
+{"level":"info","time":"2024-02-18T19:50:43Z","message":"received prove request"}
+{"level":"info","time":"2024-02-18T19:50:43Z","message":"generating proof"}
+{"level":"debug","nbConstraints":53475,"backend":"groth16","took":39.599708,"time":"2024-02-18T19:50:43Z","message":"constraint system solver done"}
+{"level":"debug","curve":"bn254","nbConstraints":53475,"backend":"groth16","took":185.99175,"time":"2024-02-18T19:50:44Z","message":"prover done"}
+{"level":"info","time":"2024-02-18T19:50:44Z","message":"proof generated successfully"}
