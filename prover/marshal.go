@@ -33,14 +33,6 @@ type InsertionParametersJSON struct {
 	IdComms      []string   `json:"identityCommitments"`
 	MerkleProofs [][]string `json:"merkleProofs"`
 }
-type DeletionParametersJSON struct {
-	InputHash       string     `json:"inputHash"`
-	DeletionIndices []uint32   `json:"deletionIndices"`
-	PreRoot         string     `json:"preRoot"`
-	PostRoot        string     `json:"postRoot"`
-	IdComms         []string   `json:"identityCommitments"`
-	MerkleProofs    [][]string `json:"merkleProofs"`
-}
 
 func (p *InsertionParameters) MarshalJSON() ([]byte, error) {
 	paramsJson := InsertionParametersJSON{}
