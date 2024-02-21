@@ -1,11 +1,16 @@
 module worldcoin/gnark-mbu
 
-go 1.20
+go 1.21
+
+require golang.org/x/mobile v0.0.0-20240213143359-d1f7d3436075
+
+//require github.com/fermyon/spin/sdk/go/v2 v2.2.0
+//require github.com/julienschmidt/httprouter v1.3.0 // indirect
 
 require (
 	github.com/consensys/gnark v0.8.0
 	github.com/iden3/go-iden3-crypto v0.0.13
-	github.com/prometheus/client_golang v1.14.0
+	//github.com/prometheus/client_golang v1.14.0
 	github.com/reilabs/gnark-lean-extractor/v2 v2.1.0
 	github.com/urfave/cli/v2 v2.10.2
 )
@@ -32,6 +37,8 @@ require (
 	github.com/shurcooL/go-goon v1.0.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
+	golang.org/x/mod v0.15.0 // indirect
+	golang.org/x/tools v0.18.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
@@ -46,6 +53,6 @@ require (
 	github.com/stretchr/testify v1.8.2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/crypto v0.10.0 // indirect
-	golang.org/x/sys v0.12.0 // indirect
+	golang.org/x/sys v0.17.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

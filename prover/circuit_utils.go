@@ -2,6 +2,7 @@ package prover
 
 import (
 	"fmt"
+	"github.com/consensys/gnark/constraint"
 	"io"
 	"os"
 	"strconv"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/backend/groth16"
-	"github.com/consensys/gnark/constraint"
 	"github.com/consensys/gnark/frontend"
 	"github.com/reilabs/gnark-lean-extractor/v2/abstractor"
 )

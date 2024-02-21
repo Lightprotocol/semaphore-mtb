@@ -1,11 +1,12 @@
 package main
 
 import (
-	"bytes"
 	_ "embed"
 	"encoding/json"
 	"fmt"
 	"github.com/consensys/gnark/constraint"
+	gnarkLogger "github.com/consensys/gnark/logger"
+	"github.com/urfave/cli/v2"
 	"io"
 	"math/big"
 	"os"
@@ -13,70 +14,78 @@ import (
 	"worldcoin/gnark-mbu/logging"
 	"worldcoin/gnark-mbu/prover"
 	"worldcoin/gnark-mbu/server"
-
-	gnarkLogger "github.com/consensys/gnark/logger"
-	"github.com/urfave/cli/v2"
 )
 
-//go:embed circuit_9_22
-var pk_bytes []byte
-
-//go:embed 9_22_test.json
-var input_params []byte
+// import (
+//
+//	spinhttp "github.com/fermyon/spin/sdk/go/v2/http"
+//	"net/http"
+//
+// )
+//
+////go:embed circuit_1_22
+//var pk_bytes []byte
+//
+////go:embed 1_22_test.json
+//var input_params []byte
 
 func main() {
-	logging.Logger().Info().Msg("Running prover")
-	ps := new(prover.ProvingSystem)
-
-	reader := bytes.NewReader(pk_bytes)
-	_, err := ps.UnsafeReadFrom(reader)
-	if err != nil {
-		fmt.Println(err)
-	}
-	//ps := prover.ProvingSystem.UnsafeReadFrom(pk_bytes)
-
-	//pk := groth16.NewProvingKey(ecc.BN254)
-	//f, _ := os.Open("")
-	//reader := bytes.NewReader(pk_bytes)
-	//_, err := pk.ReadFrom(reader)
-	//if err != nil {
-	//	fmt.Errorf("read file error")
-	//}
-	//f.Close()
-
-	//ps, err := prover.ReadSystemFromFile(keys)
-	//if err != nil {
-	//	fmt.Println(err)
-	//}
-	//logging.Logger().Info().Uint32("treeDepth", ps.TreeDepth).Uint32("batchSize", ps.BatchSize).Msg("Read proving system")
-	//logging.Logger().Info().Msg("reading params from stdin")
-	//bytes, err := io.ReadAll(os.Stdin)
-	//if err != nil {
-	//	fmt.Println(err)
-	//}
-
-	ps.TreeDepth = 22
-	ps.BatchSize = 9
-
-	var proof *prover.Proof
-	var params prover.InsertionParameters
-
-	err = json.Unmarshal(input_params, &params)
-	if err != nil {
-		fmt.Println(err)
-	}
-	logging.Logger().Info().Msg("params read successfully")
-
-	proof, err = ps.ProveInsertion(&params)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-	r, _ := json.Marshal(&proof)
-	fmt.Println(string(r))
+	//prove()
+	run_cli()
 }
 
-func main_old() {
+//func init() {
+//	spinhttp.Handle(func(w http.ResponseWriter, r *http.Request) {
+//		w.Header().Set("Content-Type", "text/plain")
+//		fmt.Fprintln(w, "Hello Prover!")
+//		prove()
+//	})
+//}
+
+//func prove() {
+//	logging.Logger().Info().Msg("Running prover")
+//
+//	ps := new(prover.ProvingSystem)
+//
+//	reader := bytes.NewReader(pk_bytes)
+//	fmt.Println(reader.Len())
+//	_, err := ps.UnsafeReadFrom(reader)
+//	if err != nil {
+//		fmt.Println(err)
+//	}
+//
+//	ps.TreeDepth = 22
+//	ps.BatchSize = 1
+//
+//	var proof *prover.Proof
+//
+//	var params = prover.InsertionParameters{
+//		InputHash:    big.Int{},
+//		StartIndex:   0,
+//		PreRoot:      big.Int{},
+//		PostRoot:     big.Int{},
+//		IdComms:      nil,
+//		MerkleProofs: nil,
+//	}
+//	fmt.Println("Params: ", params)
+//
+//	fmt.Println("Parsing json...")
+//	err = json.Unmarshal(input_params, &params)
+//	if err != nil {
+//		fmt.Println("Ooops!: ", err)
+//	}
+//	logging.Logger().Info().Msg("params read successfully")
+//
+//	proof, err = ps.ProveInsertion(&params)
+//
+//	if err != nil {
+//		fmt.Println(err)
+//	}
+//	r, _ := json.Marshal(&proof)
+//	fmt.Println(string(r))
+//}
+
+func run_cli() {
 	gnarkLogger.Set(*logging.Logger())
 	app := cli.App{
 		EnableBashCompletion: true,

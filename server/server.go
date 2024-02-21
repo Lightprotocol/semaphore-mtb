@@ -9,8 +9,7 @@ import (
 	"worldcoin/gnark-mbu/logging"
 
 	"worldcoin/gnark-mbu/prover"
-
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	//"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Error struct {
@@ -79,7 +78,7 @@ func spawnServerJob(server *http.Server, label string) RunningJob {
 
 func Run(config *Config, provingSystem *prover.ProvingSystem) RunningJob {
 	metricsMux := http.NewServeMux()
-	metricsMux.Handle("/metrics", promhttp.Handler())
+	//metricsMux.Handle("/metrics", promhttp.Handler())
 	metricsServer := &http.Server{Addr: config.MetricsAddress, Handler: metricsMux}
 	metricsJob := spawnServerJob(metricsServer, "metrics server")
 	logging.Logger().Info().Str("addr", config.MetricsAddress).Msg("metrics server started")
