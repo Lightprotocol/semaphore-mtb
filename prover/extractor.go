@@ -15,22 +15,13 @@ func ExtractLean(treeDepth uint32, batchSize uint32) (string, error) {
 		proofs[i] = make([]frontend.Variable, treeDepth)
 	}
 
-	deletion := DeletionMbuCircuit{
-		DeletionIndices: make([]frontend.Variable, batchSize),
-		IdComms: make([]frontend.Variable, batchSize),
-		MerkleProofs: proofs,
-
-		BatchSize: int(batchSize),
-		Depth: int(treeDepth),
-	}
-
 	insertion := InsertionMbuCircuit{
-		IdComms: make([]frontend.Variable, batchSize),
+		IdComms:      make([]frontend.Variable, batchSize),
 		MerkleProofs: proofs,
 
 		BatchSize: int(batchSize),
-		Depth: int(treeDepth),
+		Depth:     int(treeDepth),
 	}
 
-	return extractor.ExtractCircuits("SemaphoreMTB", ecc.BN254, &deletion, &insertion)
+	return extractor.ExtractCircuits("SemaphoreMTB", ecc.BN254, &insertion)
 }

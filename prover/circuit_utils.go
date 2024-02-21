@@ -5,7 +5,6 @@ import (
 	"github.com/consensys/gnark/constraint"
 	"io"
 	"os"
-	"strconv"
 	"worldcoin/gnark-mbu/logging"
 	"worldcoin/gnark-mbu/prover/poseidon"
 
@@ -28,14 +27,6 @@ type ProvingSystem struct {
 }
 
 const emptyLeaf = 0
-
-type bitPatternLengthError struct {
-	actualLength int
-}
-
-func (e *bitPatternLengthError) Error() string {
-	return "Bit pattern length was " + strconv.Itoa(e.actualLength) + " not a total number of bytes"
-}
 
 // ProofRound gadget generates the ParentHash
 type ProofRound struct {
