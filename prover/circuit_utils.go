@@ -3,7 +3,6 @@ package prover
 import (
 	"fmt"
 	"github.com/consensys/gnark/constraint"
-	"io"
 	"os"
 	"worldcoin/gnark-mbu/logging"
 	"worldcoin/gnark-mbu/prover/poseidon"
@@ -196,35 +195,4 @@ func (gadget ToReducedBigEndian) DefineGadget(api frontend.API) interface{} {
 		newBits = append(newBits, currentBytes...)
 	}
 	return newBits
-}
-
-// FromBinaryBigEndian converts the provided bit pattern that uses big-endian
-// byte ordering to a variable that uses little-endian byte ordering.
-type FromBinaryBigEndian struct {
-	Variable []frontend.Variable
-}
-
-func (gadget FromBinaryBigEndian) DefineGadget(api frontend.API) interface{} {
-	// Swapping Endianness
-	// It does not introduce any new circuit constraints as it simply moves the
-	// variables (that will later be instantiated to bits) around in the slice to
-	// change the byte ordering. It has been verified to be a constraint-neutral
-	// operation, so please maintain this invariant when modifying it.
-	var newBits []frontend.Variable
-	for i := len(gadget.Variable) - 8; i >= 0; i -= 8 {
-		currentBytes := gadget.Variable[i : i+8]
-		newBits = append(newBits, currentBytes...)
-	}
-	return api.FromBinary(newBits...)
-}
-
-func toBytesLE(b []byte) []byte {
-	for i := 0; i < len(b)/2; i++ {
-		b[i], b[len(b)-i-1] = b[len(b)-i-1], b[i]
-	}
-	return b
-}
-
-func (ps *ProvingSystem) ExportSolidity(writer io.Writer) error {
-	return ps.VerifyingKey.ExportSolidity(writer)
 }

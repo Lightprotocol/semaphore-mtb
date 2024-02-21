@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/iden3/go-iden3-crypto/poseidon"
 	"math/big"
 )
@@ -132,6 +131,5 @@ func NewTree(depth int) PoseidonTree {
 		val, _ := poseidon.Hash([]*big.Int{&initHashes[i-1], &initHashes[i-1]})
 		initHashes[i] = *val
 	}
-	fmt.Println("initHashes: ", initHashes)
 	return PoseidonTree{root: &PoseidonEmptyNode{dep: depth, emptyTreeValues: initHashes}}
 }

@@ -197,32 +197,6 @@ func run_cli() {
 				},
 			},
 			{
-				Name: "export-solidity",
-				Flags: []cli.Flag{
-					&cli.StringFlag{Name: "keys-file", Usage: "proving system file", Required: true},
-					&cli.StringFlag{Name: "output", Usage: "solidity output (will write to stdout if not provided)", Required: false},
-				},
-				Action: func(context *cli.Context) error {
-					keys := context.String("keys-file")
-					ps, err := prover.ReadSystemFromFile(keys)
-					if err != nil {
-						return err
-					}
-					var output io.Writer
-					if outPath := context.String("output"); outPath != "" {
-						file, err := os.Create(outPath)
-						defer file.Close()
-						if err != nil {
-							return err
-						}
-						output = file
-					} else {
-						output = os.Stdout
-					}
-					return ps.ExportSolidity(output)
-				},
-			},
-			{
 				Name: "export-vk",
 				Flags: []cli.Flag{
 					&cli.StringFlag{Name: "keys-file", Usage: "proving system file", Required: true},

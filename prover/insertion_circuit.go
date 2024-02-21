@@ -25,35 +25,6 @@ type InsertionMbuCircuit struct {
 }
 
 func (circuit *InsertionMbuCircuit) Define(api frontend.API) error {
-	// Hash private inputs.
-	// We keccak hash all input to save verification gas. Inputs are arranged as follows:
-	// StartIndex || PreRoot || PostRoot || IdComms[0] || IdComms[1] || ... || IdComms[batchSize-1]
-	//     32	  ||   256   ||   256    ||    256     ||    256     || ... ||     256 bits
-	// var bits []frontend.Variable
-
-	// // We convert all the inputs to the keccak hash to use big-endian (network) byte
-	// // ordering so that it agrees with Solidity. This ensures that we don't have to
-	// // perform the conversion inside the contract and hence save on gas.
-	// bits_start := abstractor.Call1(api, ToReducedBigEndian{Variable: circuit.StartIndex, Size: 32})
-	// bits = append(bits, bits_start...)
-
-	// bits_pre := abstractor.Call1(api, ToReducedBigEndian{Variable: circuit.PreRoot, Size: 256})
-	// bits = append(bits, bits_pre...)
-
-	// bits_post := abstractor.Call1(api, ToReducedBigEndian{Variable: circuit.PostRoot, Size: 256})
-	// bits = append(bits, bits_post...)
-
-	// for i := 0; i < circuit.BatchSize; i++ {
-	// 	bits_id := abstractor.Call1(api, ToReducedBigEndian{Variable: circuit.IdComms[i], Size: 256})
-	// 	bits = append(bits, bits_id...)
-	// }
-
-	// hash := keccak.NewKeccak256(api, (circuit.BatchSize+2)*256+32, bits...)
-	// sum := abstractor.Call(api, FromBinaryBigEndian{Variable: hash})
-
-	// // The same endianness conversion has been performed in the hash generation
-	// // externally, so we can safely assert their equality here.
-	// api.AssertIsEqual(circuit.InputHash, sum)
 	api.AssertIsEqual(circuit.InputHash, circuit.InputHash)
 	api.AssertIsEqual(circuit.StartIndex, circuit.StartIndex)
 	api.AssertIsEqual(circuit.PreRoot, circuit.PreRoot)
@@ -89,7 +60,6 @@ func ImportInsertionSetup(treeDepth uint32, batchSize uint32, pkPath string, vkP
 		MerkleProofs: proofs,
 	}
 	ccs, err := frontend.Compile(ecc.BN254.ScalarField(), r1cs.NewBuilder, &circuit)
-	// ccs, err := frontend.Compile(ecc.BLS12_381.ScalarField(), r1cs.NewBuilder, &circuit)
 	if err != nil {
 		return nil, err
 	}
