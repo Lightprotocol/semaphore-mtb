@@ -14,8 +14,6 @@ import (
 const ProverAddress = "localhost:8080"
 const MetricsAddress = "localhost:9999"
 
-var mode string
-
 func TestMain(m *testing.M) {
 	gnarkLogger.Set(*logging.Logger())
 	logging.Logger().Info().Msg("Setting up the prover")
@@ -26,12 +24,10 @@ func TestMain(m *testing.M) {
 	cfg := server.Config{
 		ProverAddress:  ProverAddress,
 		MetricsAddress: MetricsAddress,
-		Mode:           server.InsertionMode,
 	}
 	logging.Logger().Info().Msg("Starting the insertion server")
 	instance := server.Run(&cfg, ps)
 	logging.Logger().Info().Msg("Running the insertion tests")
-	mode = server.InsertionMode
 	m.Run()
 	instance.RequestStop()
 	instance.AwaitStop()
@@ -60,9 +56,6 @@ func TestMain(m *testing.M) {
 // }
 
 func TestInsertionHappyPath22_1(t *testing.T) {
-	if mode != server.InsertionMode {
-		return
-	}
 	body := `{
 		"inputHash":"0x9f565aa05c660b0b46c446d95ad75716532764a42cdbbe5f4a9bbc7e01a1f624",
 		"startIndex":0,
