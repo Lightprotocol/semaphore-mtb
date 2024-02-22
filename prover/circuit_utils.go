@@ -2,15 +2,14 @@ package prover
 
 import (
 	"fmt"
-	"github.com/consensys/gnark/constraint"
-	"os"
-	"worldcoin/gnark-mbu/logging"
-	"worldcoin/gnark-mbu/prover/poseidon"
-
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/backend/groth16"
+	"github.com/consensys/gnark/constraint"
 	"github.com/consensys/gnark/frontend"
 	"github.com/reilabs/gnark-lean-extractor/v2/abstractor"
+	"light/gnark-merkle/logging"
+	"light/gnark-merkle/prover/poseidon"
+	"os"
 )
 
 type Proof struct {
@@ -19,15 +18,12 @@ type Proof struct {
 
 type ProvingSystem struct {
 	TreeDepth        uint32
-	BatchSize        uint32
+	NumOfUTXOs       uint32
 	ProvingKey       groth16.ProvingKey
 	VerifyingKey     groth16.VerifyingKey
 	ConstraintSystem constraint.ConstraintSystem
 }
 
-const emptyLeaf = 0
-
-// ProofRound gadget generates the ParentHash
 type ProofRound struct {
 	Direction frontend.Variable
 	Hash      frontend.Variable
@@ -42,8 +38,6 @@ func (gadget ProofRound) DefineGadget(api frontend.API) interface{} {
 	return sum
 }
 
-// VerifyProof recovers the Merkle Tree using Proof[] and Path[] and returns the tree Root
-// Proof[0] corresponds to the Leaf which is why len(Proof) === len(Path) + 1
 type VerifyProof struct {
 	Proof []frontend.Variable
 	Path  []frontend.Variable
@@ -69,15 +63,6 @@ type InsertionRound struct {
 func (gadget InsertionRound) DefineGadget(api frontend.API) interface{} {
 	currentPath := api.ToBinary(gadget.Index, gadget.Depth)
 
-	// len(circuit.MerkleProofs) === circuit.BatchSize
-	// len(circuit.MerkleProofs[i]) === circuit.Depth
-	// len(circuit.IdComms) === circuit.BatchSize
-	// Verify proof for empty leaf.
-	// proof := append([]frontend.Variable{emptyLeaf}, gadget.Proof[:]...)
-	// root := abstractor.Call(api, VerifyProof{Proof: proof, Path: currentPath})
-	// api.AssertIsEqual(root, gadget.PrevRoot)
-
-	// // Verify proof for idComm.
 	proof := append([]frontend.Variable{gadget.Item}, gadget.Proof[:]...)
 	root := abstractor.Call(api, VerifyProof{Proof: proof, Path: currentPath})
 
@@ -85,32 +70,32 @@ func (gadget InsertionRound) DefineGadget(api frontend.API) interface{} {
 }
 
 type InsertionProof struct {
-	StartIndex frontend.Variable
-	PreRoot    frontend.Variable
-	IdComms    []frontend.Variable
+	Root           []frontend.Variable
+	Leaf           []frontend.Variable
+	InPathIndices  []frontend.Variable
+	InPathElements [][]frontend.Variable
 
-	MerkleProofs [][]frontend.Variable
-
-	BatchSize int
-	Depth     int
+	NumOfUTXOs int
+	Depth      int
 }
 
 func (gadget InsertionProof) DefineGadget(api frontend.API) interface{} {
-	prevRoot := gadget.PreRoot
+	currentHash := gadget.Leaf
+	fmt.Println("currentHash: ", currentHash)
+	fmt.Println("gadget.NumOfUTXOs: ", gadget.NumOfUTXOs)
+	fmt.Println("gadget.Depth: ", gadget.Depth)
 
-	// Individual insertions.
-	for i := 0; i < gadget.BatchSize; i += 1 {
-		currentIndex := api.Add(gadget.StartIndex, i)
-		prevRoot = abstractor.Call(api, InsertionRound{
-			Index:    currentIndex,
-			Item:     gadget.IdComms[i],
-			PrevRoot: prevRoot,
-			Proof:    gadget.MerkleProofs[i],
-			Depth:    gadget.Depth,
-		})
+	nextHash := currentHash[0]
+	for i := 0; i < gadget.NumOfUTXOs; i++ {
+		for j := 0; j < gadget.Depth; j++ {
+			el := gadget.InPathElements[i][j]
+			fmt.Println("inPathElements[", i, "][", j, "]: ", el)
+			nextHash = abstractor.Call(api, ProofRound{Direction: gadget.InPathIndices[i], Hash: nextHash, Sibling: gadget.InPathElements[i][j]})
+			fmt.Println("nextHash: ", nextHash)
+		}
+		currentHash[i] = nextHash
 	}
-
-	return prevRoot
+	return nextHash
 }
 
 // Trusted setup utility functions
@@ -140,59 +125,4 @@ func LoadVerifyingKey(filepath string) (verifyingKey groth16.VerifyingKey, err e
 	f.Close()
 
 	return verifyingKey, nil
-}
-
-// ReducedModRCheck Checks a little-endian array of bits asserting that it represents a number that
-// is less than the field modulus R.
-type ReducedModRCheck struct {
-	Input []frontend.Variable
-}
-
-func (r ReducedModRCheck) DefineGadget(api frontend.API) interface{} {
-	field := api.Compiler().Field()
-	if len(r.Input) < field.BitLen() {
-		// input is shorter than the field, so it's definitely reduced
-		return []frontend.Variable{}
-	}
-	var failed frontend.Variable = 0    // we already know number is > R
-	var succeeded frontend.Variable = 0 // we already know number is < R
-	for i := len(r.Input) - 1; i >= 0; i-- {
-		api.AssertIsBoolean(r.Input[i])
-		if field.Bit(i) == 0 {
-			// if number is not already < R, a 1 in this position means it's > R
-			failed = api.Select(succeeded, 0, api.Or(r.Input[i], failed))
-		} else {
-			bitNeg := api.Sub(1, r.Input[i])
-			// if number isn't already > R, a 0 in this position means it's < R
-			succeeded = api.Select(failed, 0, api.Or(bitNeg, succeeded))
-		}
-	}
-	api.AssertIsEqual(succeeded, 1)
-	return []frontend.Variable{}
-}
-
-// ToReducedBinaryBigEndian converts the provided variable to the corresponding bit
-// pattern using big-endian byte ordering. It also makes sure to pick the smallest
-// binary representation (i.e. one that is reduced modulo scalar field order).
-type ToReducedBigEndian struct {
-	Variable frontend.Variable
-
-	Size int
-}
-
-func (gadget ToReducedBigEndian) DefineGadget(api frontend.API) interface{} {
-	bitsLittleEndian := api.ToBinary(gadget.Variable, gadget.Size)
-	abstractor.CallVoid(api, ReducedModRCheck{Input: bitsLittleEndian})
-
-	// Swapping Endianness
-	// It does not introduce any new circuit constraints as it simply moves the
-	// variables (that will later be instantiated to bits) around in the slice to
-	// change the byte ordering. It has been verified to be a constraint-neutral
-	// operation, so please maintain this invariant when modifying it.
-	var newBits []frontend.Variable
-	for i := len(bitsLittleEndian) - 8; i >= 0; i -= 8 {
-		currentBytes := bitsLittleEndian[i : i+8]
-		newBits = append(newBits, currentBytes...)
-	}
-	return newBits
 }

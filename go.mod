@@ -1,4 +1,4 @@
-module worldcoin/gnark-mbu
+module light/gnark-merkle
 
 go 1.21
 

@@ -8,12 +8,13 @@ import (
 	gnarkLogger "github.com/consensys/gnark/logger"
 	"github.com/urfave/cli/v2"
 	"io"
+	"light/gnark-merkle/logging"
+	"light/gnark-merkle/prover"
+	"light/gnark-merkle/server"
+	tree2 "light/gnark-merkle/tree"
 	"math/big"
 	"os"
 	"os/signal"
-	"worldcoin/gnark-mbu/logging"
-	"worldcoin/gnark-mbu/prover"
-	"worldcoin/gnark-mbu/server"
 )
 
 // import (
@@ -95,7 +96,7 @@ func run_cli() {
 				Flags: []cli.Flag{
 					&cli.StringFlag{Name: "output", Usage: "Output file", Required: true},
 					&cli.UintFlag{Name: "tree-depth", Usage: "Merkle tree depth", Required: true},
-					&cli.UintFlag{Name: "batch-size", Usage: "Batch size", Required: true},
+					&cli.UintFlag{Name: "num-utxos", Usage: "Number of UTXOs", Required: true},
 				},
 				Action: func(context *cli.Context) error {
 					path := context.String("output")
@@ -235,18 +236,17 @@ func run_cli() {
 					var err error
 
 					params := prover.InsertionParameters{}
-					tree := NewTree(treeDepth)
+					tree := tree2.NewTree(treeDepth)
 
-					params.StartIndex = 0
-					params.PreRoot = tree.Root()
-					params.IdComms = make([]big.Int, batchSize)
-					params.MerkleProofs = make([][]big.Int, batchSize)
 					for i := 0; i < int(batchSize); i++ {
-						params.IdComms[i] = *new(big.Int).SetUint64(uint64(i + 1))
-						params.MerkleProofs[i] = tree.Update(i, params.IdComms[i])
+						params.Root[i] = tree.Root()
+						//params.Leaf[i] = tree.Leaf()
+						params.InPathIndices[i] = 0
+						//params.InPathElements[i] = tree.Update(i, params.InPathIndices[i])
+						//params.MerkleProofs[i] = tree.Update(i, params.IdComms[i])
 					}
-					params.PostRoot = tree.Root()
-					params.ComputeInputHashInsertion()
+					//params.PostRoot = tree.Root()
+					//params.ComputeInputHashInsertion()
 					r, err = json.Marshal(&params)
 
 					if err != nil {
@@ -276,7 +276,7 @@ func run_cli() {
 					if err != nil {
 						return err
 					}
-					logging.Logger().Info().Uint32("treeDepth", ps.TreeDepth).Uint32("batchSize", ps.BatchSize).Msg("Read proving system")
+					logging.Logger().Info().Uint32("treeDepth", ps.TreeDepth).Uint32("batchSize", ps.NumOfUTXOs).Msg("Read proving system")
 					config := server.Config{
 						ProverAddress:  context.String("prover-address"),
 						MetricsAddress: context.String("metrics-address"),
@@ -303,7 +303,7 @@ func run_cli() {
 					if err != nil {
 						return err
 					}
-					logging.Logger().Info().Uint32("treeDepth", ps.TreeDepth).Uint32("batchSize", ps.BatchSize).Msg("Read proving system")
+					logging.Logger().Info().Uint32("treeDepth", ps.TreeDepth).Uint32("batchSize", ps.NumOfUTXOs).Msg("Read proving system")
 					logging.Logger().Info().Msg("reading params from stdin")
 					bytes, err := io.ReadAll(os.Stdin)
 					if err != nil {
@@ -331,20 +331,28 @@ func run_cli() {
 				Name: "verify",
 				Flags: []cli.Flag{
 					&cli.StringFlag{Name: "keys-file", Usage: "proving system file", Required: true},
-					&cli.StringFlag{Name: "input-hash", Usage: "the hash of all public inputs", Required: true},
+					&cli.StringFlag{Name: "root", Usage: "array of roots", Required: true},
+					&cli.StringFlag{Name: "leaf", Usage: "array of leafs", Required: true},
 				},
 				Action: func(context *cli.Context) error {
 					keys := context.String("keys-file")
-					var inputHash big.Int
-					_, ok := inputHash.SetString(context.String("input-hash"), 0)
+					var root big.Int
+					_, ok := root.SetString(context.String("root"), 0)
 					if !ok {
-						return fmt.Errorf("invalid number: %s", context.String("input-hash"))
+						return fmt.Errorf("invalid number: %s", context.String("root"))
 					}
+
+					var leaf big.Int
+					_, ok = root.SetString(context.String("leaf"), 0)
+					if !ok {
+						return fmt.Errorf("invalid number: %s", context.String("leaf"))
+					}
+
 					ps, err := prover.ReadSystemFromFile(keys)
 					if err != nil {
 						return err
 					}
-					logging.Logger().Info().Uint32("treeDepth", ps.TreeDepth).Uint32("batchSize", ps.BatchSize).Msg("Read proving system")
+					logging.Logger().Info().Uint32("treeDepth", ps.TreeDepth).Uint32("batchSize", ps.NumOfUTXOs).Msg("Read proving system")
 					logging.Logger().Info().Msg("reading proof from stdin")
 					bytes, err := io.ReadAll(os.Stdin)
 					if err != nil {
@@ -357,7 +365,7 @@ func run_cli() {
 					}
 					logging.Logger().Info().Msg("proof read successfully")
 
-					err = ps.VerifyInsertion(inputHash, &proof)
+					err = ps.VerifyInsertion(root, leaf, &proof)
 
 					if err != nil {
 						return err
@@ -366,36 +374,36 @@ func run_cli() {
 					return nil
 				},
 			},
-			{
-				Name: "extract-circuit",
-				Flags: []cli.Flag{
-					&cli.StringFlag{Name: "output", Usage: "Output file", Required: true},
-					&cli.UintFlag{Name: "tree-depth", Usage: "Merkle tree depth", Required: true},
-					&cli.UintFlag{Name: "batch-size", Usage: "Batch size", Required: true},
-				},
-				Action: func(context *cli.Context) error {
-					path := context.String("output")
-					treeDepth := uint32(context.Uint("tree-depth"))
-					batchSize := uint32(context.Uint("batch-size"))
-					logging.Logger().Info().Msg("Extracting gnark circuit to Lean")
-					circuit_string, err := prover.ExtractLean(treeDepth, batchSize)
-					if err != nil {
-						return err
-					}
-					file, err := os.Create(path)
-					defer file.Close()
-					if err != nil {
-						return err
-					}
-					written, err := file.WriteString(circuit_string)
-					if err != nil {
-						return err
-					}
-					logging.Logger().Info().Int("bytesWritten", written).Msg("Lean circuit written to file")
-
-					return nil
-				},
-			},
+			//{
+			//	Name: "extract-circuit",
+			//	Flags: []cli.Flag{
+			//		&cli.StringFlag{Name: "output", Usage: "Output file", Required: true},
+			//		&cli.UintFlag{Name: "tree-depth", Usage: "Merkle tree depth", Required: true},
+			//		&cli.UintFlag{Name: "batch-size", Usage: "Batch size", Required: true},
+			//	},
+			//	Action: func(context *cli.Context) error {
+			//		path := context.String("output")
+			//		treeDepth := uint32(context.Uint("tree-depth"))
+			//		batchSize := uint32(context.Uint("batch-size"))
+			//		logging.Logger().Info().Msg("Extracting gnark circuit to Lean")
+			//		circuit_string, err := prover.ExtractLean(treeDepth, batchSize)
+			//		if err != nil {
+			//			return err
+			//		}
+			//		file, err := os.Create(path)
+			//		defer file.Close()
+			//		if err != nil {
+			//			return err
+			//		}
+			//		written, err := file.WriteString(circuit_string)
+			//		if err != nil {
+			//			return err
+			//		}
+			//		logging.Logger().Info().Int("bytesWritten", written).Msg("Lean circuit written to file")
+			//
+			//		return nil
+			//	},
+			//},
 		},
 	}
 

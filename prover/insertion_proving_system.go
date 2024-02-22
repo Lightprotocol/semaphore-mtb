@@ -1,37 +1,29 @@
 package prover
 
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
+	"light/gnark-merkle/logging"
 	"math/big"
-	"worldcoin/gnark-mbu/logging"
 
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/backend/groth16"
 	"github.com/consensys/gnark/constraint"
 	"github.com/consensys/gnark/frontend"
 	"github.com/consensys/gnark/frontend/cs/r1cs"
-	"github.com/iden3/go-iden3-crypto/keccak256"
 )
 
 type InsertionParameters struct {
-	InputHash    big.Int
-	StartIndex   uint32
-	PreRoot      big.Int
-	PostRoot     big.Int
-	IdComms      []big.Int
-	MerkleProofs [][]big.Int
+	Root           []big.Int
+	InPathIndices  []uint32
+	InPathElements [][]big.Int
+	Leaf           []big.Int
 }
 
-func (p *InsertionParameters) ValidateShape(treeDepth uint32, batchSize uint32) error {
-	if len(p.IdComms) != int(batchSize) {
-		return fmt.Errorf("wrong number of identity commitments: %d", len(p.IdComms))
+func (p *InsertionParameters) ValidateShape(treeDepth uint32, numOfUTXOs uint32) error {
+	if len(p.Root) != int(numOfUTXOs) || len(p.InPathIndices) != int(numOfUTXOs) || len(p.InPathElements) != int(numOfUTXOs) || len(p.Leaf) != int(numOfUTXOs) {
+		return fmt.Errorf("wrong number of utxos: %d", len(p.Root))
 	}
-	if len(p.MerkleProofs) != int(batchSize) {
-		return fmt.Errorf("wrong number of merkle proofs: %d", len(p.MerkleProofs))
-	}
-	for i, proof := range p.MerkleProofs {
+	for i, proof := range p.InPathElements {
 		if len(proof) != int(treeDepth) {
 			return fmt.Errorf("wrong size of merkle proof for proof %d: %d", i, len(proof))
 		}
@@ -39,44 +31,22 @@ func (p *InsertionParameters) ValidateShape(treeDepth uint32, batchSize uint32) 
 	return nil
 }
 
-// ComputeInputHash computes the input hash to the prover and verifier.
-//
-// It uses big-endian byte ordering (network ordering) in order to agree with
-// Solidity and avoid the need to perform the byte swapping operations on-chain
-// where they would increase our gas cost.
-func (p *InsertionParameters) ComputeInputHashInsertion() error {
-	var data []byte
-	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.BigEndian, p.StartIndex)
-	if err != nil {
-		return err
+func BuildR1CSInsertion(treeDepth uint32, numOfUTXOs uint32) (constraint.ConstraintSystem, error) {
+	root := make([]frontend.Variable, treeDepth)
+	leaf := make([]frontend.Variable, treeDepth)
+	inPathIndices := make([]frontend.Variable, treeDepth)
+	inPathElements := make([][]frontend.Variable, numOfUTXOs)
+	for i := 0; i < int(numOfUTXOs); i++ {
+		inPathElements[i] = make([]frontend.Variable, treeDepth)
 	}
-	data = append(data, buf.Bytes()...)
-	data = append(data, p.PreRoot.Bytes()...)
-	data = append(data, p.PostRoot.Bytes()...)
-	for _, v := range p.IdComms {
-		idBytes := v.Bytes()
-		// extend to 32 bytes if necessary, maintaining big-endian ordering
-		if len(idBytes) < 32 {
-			idBytes = append(make([]byte, 32-len(idBytes)), idBytes...)
-		}
-		data = append(data, idBytes...)
-	}
-	hashBytes := keccak256.Hash(data)
-	p.InputHash.SetBytes(hashBytes)
-	return nil
-}
 
-func BuildR1CSInsertion(treeDepth uint32, batchSize uint32) (constraint.ConstraintSystem, error) {
-	proofs := make([][]frontend.Variable, batchSize)
-	for i := 0; i < int(batchSize); i++ {
-		proofs[i] = make([]frontend.Variable, treeDepth)
-	}
-	circuit := InsertionMbuCircuit{
-		Depth:        int(treeDepth),
-		BatchSize:    int(batchSize),
-		IdComms:      make([]frontend.Variable, batchSize),
-		MerkleProofs: proofs,
+	circuit := InsertionCircuit{
+		Depth:          int(treeDepth),
+		NumOfUTXOs:     int(numOfUTXOs),
+		InPathIndices:  inPathIndices,
+		InPathElements: inPathElements,
+		Leaf:           leaf,
+		Root:           root,
 	}
 	return frontend.Compile(ecc.BN254.ScalarField(), r1cs.NewBuilder, &circuit)
 }
@@ -94,36 +64,46 @@ func SetupInsertion(treeDepth uint32, batchSize uint32) (*ProvingSystem, error) 
 }
 
 func (ps *ProvingSystem) ProveInsertion(params *InsertionParameters) (*Proof, error) {
-	if err := params.ValidateShape(ps.TreeDepth, ps.BatchSize); err != nil {
+	fmt.Println("Validating shape")
+	if err := params.ValidateShape(ps.TreeDepth, ps.NumOfUTXOs); err != nil {
 		return nil, err
 	}
-	idComms := make([]frontend.Variable, ps.BatchSize)
-	for i := 0; i < int(ps.BatchSize); i++ {
-		idComms[i] = params.IdComms[i]
-	}
-	proofs := make([][]frontend.Variable, ps.BatchSize)
-	for i := 0; i < int(ps.BatchSize); i++ {
-		proofs[i] = make([]frontend.Variable, ps.TreeDepth)
+	fmt.Println("Validated shape")
+
+	inPathIndices := make([]frontend.Variable, ps.NumOfUTXOs)
+	root := make([]frontend.Variable, ps.NumOfUTXOs)
+	leaf := make([]frontend.Variable, ps.NumOfUTXOs)
+	inPathElements := make([][]frontend.Variable, ps.NumOfUTXOs)
+
+	for i := 0; i < int(ps.NumOfUTXOs); i++ {
+		root[i] = params.Root[i]
+		leaf[i] = params.Leaf[i]
+		inPathIndices[i] = params.InPathIndices[i]
+		inPathElements[i] = make([]frontend.Variable, ps.TreeDepth)
 		for j := 0; j < int(ps.TreeDepth); j++ {
-			proofs[i][j] = params.MerkleProofs[i][j]
+			inPathElements[i][j] = params.InPathElements[i][j]
 		}
 	}
-	assignment := InsertionMbuCircuit{
-		InputHash:    params.InputHash,
-		StartIndex:   params.StartIndex,
-		PreRoot:      params.PreRoot,
-		PostRoot:     params.PostRoot,
-		IdComms:      idComms,
-		MerkleProofs: proofs,
+
+	assignment := InsertionCircuit{
+		Root:           root,
+		Leaf:           leaf,
+		InPathIndices:  inPathIndices,
+		InPathElements: inPathElements,
+		NumOfUTXOs:     int(ps.NumOfUTXOs),
+		Depth:          int(ps.TreeDepth),
 	}
 	logging.Logger().Info().Msg("generating proof")
 
 	witness, err := frontend.NewWitness(&assignment, ecc.BN254.ScalarField())
+	fmt.Println("Witness generated")
 	if err != nil {
 		return nil, err
 	}
 
+	fmt.Println("Proving")
 	proof, err := groth16.Prove(ps.ConstraintSystem, ps.ProvingKey, witness)
+	fmt.Println("Proved")
 	if err != nil {
 		return nil, err
 	}
@@ -131,11 +111,20 @@ func (ps *ProvingSystem) ProveInsertion(params *InsertionParameters) (*Proof, er
 	return &Proof{proof}, nil
 }
 
-func (ps *ProvingSystem) VerifyInsertion(inputHash big.Int, proof *Proof) error {
-	publicAssignment := InsertionMbuCircuit{
-		InputHash: inputHash,
-		IdComms:   make([]frontend.Variable, ps.BatchSize),
+func (ps *ProvingSystem) VerifyInsertion(root big.Int, leaf big.Int, proof *Proof) error {
+	//TODO: fix
+
+	roots := make([]frontend.Variable, ps.NumOfUTXOs)
+	roots[0] = root
+
+	leafs := make([]frontend.Variable, ps.NumOfUTXOs)
+	leafs[0] = leaf
+
+	publicAssignment := InsertionCircuit{
+		Root: roots,
+		Leaf: leafs,
 	}
+
 	witness, err := frontend.NewWitness(&publicAssignment, ecc.BN254.ScalarField(), frontend.PublicOnly())
 	if err != nil {
 		return err

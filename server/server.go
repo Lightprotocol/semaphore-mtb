@@ -5,10 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"light/gnark-merkle/logging"
+	"light/gnark-merkle/prover"
 	"net/http"
-	"worldcoin/gnark-mbu/logging"
-
-	"worldcoin/gnark-mbu/prover"
 	//"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -72,7 +71,7 @@ func spawnServerJob(server *http.Server, label string) RunningJob {
 	return SpawnJob(start, shutdown)
 }
 
-func Run(config *Config, provingSystem *prover.ProvingSystem) RunningJob {
+func Run(config *Config, provingSystemLight *prover.ProvingSystem) RunningJob {
 	metricsMux := http.NewServeMux()
 	//metricsMux.Handle("/metrics", promhttp.Handler())
 	metricsServer := &http.Server{Addr: config.MetricsAddress, Handler: metricsMux}
@@ -80,7 +79,7 @@ func Run(config *Config, provingSystem *prover.ProvingSystem) RunningJob {
 	logging.Logger().Info().Str("addr", config.MetricsAddress).Msg("metrics server started")
 
 	proverMux := http.NewServeMux()
-	proverMux.Handle("/prove", proveHandler{provingSystem: provingSystem})
+	proverMux.Handle("/prove", proveHandlerLight{provingSystem: provingSystemLight})
 	proverServer := &http.Server{Addr: config.ProverAddress, Handler: proverMux}
 	proverJob := spawnServerJob(proverServer, "prover server")
 	logging.Logger().Info().Str("addr", config.ProverAddress).Msg("app server started")
@@ -88,11 +87,11 @@ func Run(config *Config, provingSystem *prover.ProvingSystem) RunningJob {
 	return CombineJobs(metricsJob, proverJob)
 }
 
-type proveHandler struct {
+type proveHandlerLight struct {
 	provingSystem *prover.ProvingSystem
 }
 
-func (handler proveHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (handler proveHandlerLight) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return

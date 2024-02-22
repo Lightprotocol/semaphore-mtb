@@ -7,43 +7,37 @@ import (
 	"github.com/reilabs/gnark-lean-extractor/v2/abstractor"
 )
 
-type InsertionMbuCircuit struct {
-	// single public input
-	InputHash frontend.Variable `gnark:",public"`
-
-	// private inputs, but used as public inputs
-	StartIndex frontend.Variable   `gnark:"input"`
-	PreRoot    frontend.Variable   `gnark:"input"`
-	PostRoot   frontend.Variable   `gnark:"input"`
-	IdComms    []frontend.Variable `gnark:"input"`
+type InsertionCircuit struct {
+	// public inputs
+	Root []frontend.Variable `gnark:",public"`
+	Leaf []frontend.Variable `gnark:",public"`
 
 	// private inputs
-	MerkleProofs [][]frontend.Variable `gnark:"input"`
+	InPathIndices  []frontend.Variable   `gnark:"input"`
+	InPathElements [][]frontend.Variable `gnark:"input"`
 
-	BatchSize int
-	Depth     int
+	NumOfUTXOs int
+	Depth      int
 }
 
-func (circuit *InsertionMbuCircuit) Define(api frontend.API) error {
-	api.AssertIsEqual(circuit.InputHash, circuit.InputHash)
-	api.AssertIsEqual(circuit.StartIndex, circuit.StartIndex)
-	api.AssertIsEqual(circuit.PreRoot, circuit.PreRoot)
-	api.AssertIsEqual(circuit.StartIndex, circuit.StartIndex)
+func (circuit *InsertionCircuit) Define(api frontend.API) error {
+	//api.AssertIsEqual(circuit.Leaf, circuit.Leaf)
+	//api.AssertIsEqual(circuit.InPathIndices, circuit.InPathIndices)
+	//api.AssertIsEqual(circuit.InPathElements, circuit.InPathElements)
 
 	// Actual batch merkle proof verification.
 	root := abstractor.Call(api, InsertionProof{
-		StartIndex: circuit.StartIndex,
-		PreRoot:    circuit.PreRoot,
-		IdComms:    circuit.IdComms,
+		Root:           circuit.Root,
+		Leaf:           circuit.Leaf,
+		InPathIndices:  circuit.InPathIndices,
+		InPathElements: circuit.InPathElements,
 
-		MerkleProofs: circuit.MerkleProofs,
-
-		BatchSize: circuit.BatchSize,
-		Depth:     circuit.Depth,
+		NumOfUTXOs: circuit.NumOfUTXOs,
+		Depth:      circuit.Depth,
 	})
 
 	// Final root needs to match.
-	api.AssertIsEqual(root, circuit.PostRoot)
+	api.AssertIsEqual(root, circuit.Root)
 
 	return nil
 }
@@ -53,11 +47,14 @@ func ImportInsertionSetup(treeDepth uint32, batchSize uint32, pkPath string, vkP
 	for i := 0; i < int(batchSize); i++ {
 		proofs[i] = make([]frontend.Variable, treeDepth)
 	}
-	circuit := InsertionMbuCircuit{
-		Depth:        int(treeDepth),
-		BatchSize:    int(batchSize),
-		IdComms:      make([]frontend.Variable, batchSize),
-		MerkleProofs: proofs,
+
+	circuit := InsertionCircuit{
+		Root:           make([]frontend.Variable, batchSize),
+		Leaf:           make([]frontend.Variable, batchSize),
+		InPathIndices:  make([]frontend.Variable, batchSize),
+		InPathElements: proofs,
+		NumOfUTXOs:     int(batchSize),
+		Depth:          int(treeDepth),
 	}
 	ccs, err := frontend.Compile(ecc.BN254.ScalarField(), r1cs.NewBuilder, &circuit)
 	if err != nil {
