@@ -6,31 +6,27 @@ import (
 	"github.com/reilabs/gnark-lean-extractor/v2/extractor"
 )
 
-func ExtractLean(treeDepth uint32, batchSize uint32) (string, error) {
-	// Not checking for batchSize === 0 or treeDepth === 0
+func ExtractLean(treeDepth uint32, numberOfUtxos uint32) (string, error) {
+	// Not checking for numberOfUtxos === 0 or treeDepth === 0
 
 	// Initialising MerkleProofs slice with correct dimentions
-	proofs := make([][]frontend.Variable, batchSize)
-	for i := 0; i < int(batchSize); i++ {
-		proofs[i] = make([]frontend.Variable, treeDepth)
+	root := make([]frontend.Variable, numberOfUtxos)
+	leaf := make([]frontend.Variable, numberOfUtxos)
+	inPathIndices := make([]frontend.Variable, numberOfUtxos)
+	inPathElements := make([][]frontend.Variable, numberOfUtxos)
+
+	for i := 0; i < int(numberOfUtxos); i++ {
+		inPathElements[i] = make([]frontend.Variable, treeDepth)
 	}
 
-	deletion := DeletionMbuCircuit{
-		DeletionIndices: make([]frontend.Variable, batchSize),
-		IdComms: make([]frontend.Variable, batchSize),
-		MerkleProofs: proofs,
-
-		BatchSize: int(batchSize),
-		Depth: int(treeDepth),
+	inclusionCircuit := InclusionCircuit{
+		Depth:          int(treeDepth),
+		NumberOfUtxos:  int(numberOfUtxos),
+		Root:           root,
+		Leaf:           leaf,
+		InPathIndices:  inPathIndices,
+		InPathElements: inPathElements,
 	}
 
-	insertion := InsertionMbuCircuit{
-		IdComms: make([]frontend.Variable, batchSize),
-		MerkleProofs: proofs,
-
-		BatchSize: int(batchSize),
-		Depth: int(treeDepth),
-	}
-
-	return extractor.ExtractCircuits("SemaphoreMTB", ecc.BN254, &deletion, &insertion)
+	return extractor.ExtractCircuits("LightProver", ecc.BN254, &inclusionCircuit)
 }
