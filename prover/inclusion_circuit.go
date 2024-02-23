@@ -21,17 +21,8 @@ type InclusionCircuit struct {
 }
 
 func (circuit *InclusionCircuit) Define(api frontend.API) error {
-	for i := 0; i < circuit.NumberOfUtxos; i++ {
-		api.AssertIsEqual(circuit.Root[i], circuit.Root[i])
-		api.AssertIsEqual(circuit.Leaf[i], circuit.Leaf[i])
-		api.AssertIsEqual(circuit.InPathIndices[i], circuit.InPathIndices[i])
-		for j := 0; j < circuit.Depth; j++ {
-			api.AssertIsEqual(circuit.InPathElements[i][j], circuit.InPathElements[i][j])
-		}
-	}
-
 	// Actual merkle proof verification.
-	_ = abstractor.Call1(api, InclusionProof{
+	roots := abstractor.Call1(api, InclusionProof{
 		Root:           circuit.Root,
 		Leaf:           circuit.Leaf,
 		InPathElements: circuit.InPathElements,
@@ -40,6 +31,10 @@ func (circuit *InclusionCircuit) Define(api frontend.API) error {
 		NumberOfUtxos: circuit.NumberOfUtxos,
 		Depth:         circuit.Depth,
 	})
+
+	for i := 0; i < circuit.NumberOfUtxos; i++ {
+		api.AssertIsEqual(roots[i], circuit.Root[i])
+	}
 
 	return nil
 }

@@ -71,7 +71,6 @@ func (gadget InclusionProof) DefineGadget(api frontend.API) interface{} {
 		for j := 0; j < gadget.Depth; j++ {
 			currentHash[proofIndex] = abstractor.Call(api, ProofRound{Direction: gadget.InPathIndices[proofIndex], Hash: currentHash[proofIndex], Sibling: gadget.InPathElements[proofIndex][j]})
 		}
-		api.AssertIsEqual(gadget.Root[proofIndex], currentHash[proofIndex])
 	}
 	return currentHash
 }
