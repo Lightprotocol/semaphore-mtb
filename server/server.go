@@ -73,6 +73,7 @@ func spawnServerJob(server *http.Server, label string) RunningJob {
 
 func Run(config *Config, provingSystem []*prover.ProvingSystem) RunningJob {
 	metricsMux := http.NewServeMux()
+	// TODO: Add metrics
 	//metricsMux.Handle("/metrics", promhttp.Handler())
 	metricsServer := &http.Server{Addr: config.MetricsAddress, Handler: metricsMux}
 	metricsJob := spawnServerJob(metricsServer, "metrics server")
