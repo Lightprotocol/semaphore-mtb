@@ -43,7 +43,7 @@ func runCli() {
 
 					var system *prover.ProvingSystem
 					var err error
-					system, err = prover.SetupInsertion(treeDepth, numberOfUtxos)
+					system, err = prover.SetupInclusion(treeDepth, numberOfUtxos)
 
 					if err != nil {
 						return err
@@ -82,7 +82,7 @@ func runCli() {
 					var cs constraint.ConstraintSystem
 					var err error
 
-					cs, err = prover.R1CSInsertion(treeDepth, utxos)
+					cs, err = prover.R1CSInclusion(treeDepth, utxos)
 
 					if err != nil {
 						return err
@@ -125,7 +125,7 @@ func runCli() {
 
 					logging.Logger().Info().Msg("Importing setup")
 
-					system, err = prover.ImportInsertionSetup(treeDepth, utxos, pk, vk)
+					system, err = prover.ImportInclusionSetup(treeDepth, utxos, pk, vk)
 
 					if err != nil {
 						return err
@@ -187,7 +187,7 @@ func runCli() {
 				Action: func(context *cli.Context) error {
 					treeDepth := context.Int("tree-depth")
 					utxos := context.Int("utxos")
-					logging.Logger().Info().Msg("Generating test params for the insertion circuit")
+					logging.Logger().Info().Msg("Generating test params for the inclusion circuit")
 
 					var r []byte
 					var err error
@@ -268,7 +268,7 @@ func runCli() {
 					}
 
 					var proof *prover.Proof
-					var params prover.InsertionParameters
+					var params prover.InclusionParameters
 					err = json.Unmarshal(bytes, &params)
 					if err != nil {
 						return err
@@ -279,7 +279,7 @@ func runCli() {
 
 					for _, provingSystem := range ps {
 						if provingSystem.TreeDepth == treeDepth && provingSystem.NumberOfUtxos == utxos {
-							proof, err = provingSystem.ProveInsertion(&params)
+							proof, err = provingSystem.ProveInclusion(&params)
 							if err != nil {
 								return err
 							}
@@ -343,7 +343,7 @@ func runCli() {
 					}
 					logging.Logger().Info().Msg("proof read successfully")
 
-					err = ps.VerifyInsertion(root, leaf, &proof)
+					err = ps.VerifyInclusion(root, leaf, &proof)
 
 					if err != nil {
 						return err

@@ -54,7 +54,7 @@ func (gadget VerifyProof) DefineGadget(api frontend.API) interface{} {
 	return sum
 }
 
-type InsertionProof struct {
+type InclusionProof struct {
 	Root           []frontend.Variable
 	Leaf           []frontend.Variable
 	InPathIndices  []frontend.Variable
@@ -64,7 +64,7 @@ type InsertionProof struct {
 	Depth         int
 }
 
-func (gadget InsertionProof) DefineGadget(api frontend.API) interface{} {
+func (gadget InclusionProof) DefineGadget(api frontend.API) interface{} {
 	currentHash := make([]frontend.Variable, gadget.NumberOfUtxos)
 	for proofIndex := 0; proofIndex < gadget.NumberOfUtxos; proofIndex++ {
 		currentHash[proofIndex] = gadget.Leaf[proofIndex]

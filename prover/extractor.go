@@ -19,7 +19,7 @@ func ExtractLean(treeDepth uint32, numberOfUtxos uint32) (string, error) {
 		inPathElements[i] = make([]frontend.Variable, treeDepth)
 	}
 
-	insertion := InsertionCircuit{
+	inclusionCircuit := InclusionCircuit{
 		Depth:          int(treeDepth),
 		NumberOfUtxos:  int(numberOfUtxos),
 		Root:           root,
@@ -28,5 +28,5 @@ func ExtractLean(treeDepth uint32, numberOfUtxos uint32) (string, error) {
 		InPathElements: inPathElements,
 	}
 
-	return extractor.ExtractCircuits("LightProver", ecc.BN254, &insertion)
+	return extractor.ExtractCircuits("LightProver", ecc.BN254, &inclusionCircuit)
 }

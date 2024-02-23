@@ -135,7 +135,7 @@ func NewTree(depth int) PoseidonTree {
 	return PoseidonTree{root: &PoseidonEmptyNode{dep: depth, emptyTreeValues: initHashes}}
 }
 
-func BuildTestTree(depth int, numberOfUtxos int) prover.InsertionParameters {
+func BuildTestTree(depth int, numberOfUtxos int) prover.InclusionParameters {
 	tree := NewTree(depth)
 	leaf, _ := poseidon.Hash([]*big.Int{big.NewInt(1)})
 	inPathIndices := 0
@@ -154,7 +154,7 @@ func BuildTestTree(depth int, numberOfUtxos int) prover.InsertionParameters {
 		leaves[i] = *leaf
 	}
 
-	return prover.InsertionParameters{
+	return prover.InclusionParameters{
 		Root:           roots,
 		InPathIndices:  inPathIndicesBatch,
 		InPathElements: inPathElementsBatch,

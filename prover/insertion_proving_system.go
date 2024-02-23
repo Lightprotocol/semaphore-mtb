@@ -13,25 +13,25 @@ import (
 	"github.com/consensys/gnark/frontend/cs/r1cs"
 )
 
-type InsertionParameters struct {
+type InclusionParameters struct {
 	Root           []big.Int
 	InPathIndices  []uint32
 	InPathElements [][]big.Int
 	Leaf           []big.Int
 }
 
-func (p *InsertionParameters) NumberOfUTXOs() uint32 {
+func (p *InclusionParameters) NumberOfUTXOs() uint32 {
 	return uint32(len(p.Root))
 }
 
-func (p *InsertionParameters) TreeDepth() uint32 {
+func (p *InclusionParameters) TreeDepth() uint32 {
 	if len(p.InPathElements) == 0 {
 		return 0
 	}
 	return uint32(len(p.InPathElements[0]))
 }
 
-func (p *InsertionParameters) ValidateShape(treeDepth uint32, numOfUTXOs uint32) error {
+func (p *InclusionParameters) ValidateShape(treeDepth uint32, numOfUTXOs uint32) error {
 	if p.NumberOfUTXOs() != numOfUTXOs {
 		return fmt.Errorf("wrong number of utxos: %d", len(p.Root))
 	}
@@ -41,7 +41,7 @@ func (p *InsertionParameters) ValidateShape(treeDepth uint32, numOfUTXOs uint32)
 	return nil
 }
 
-func R1CSInsertion(treeDepth uint32, numberOfUtxos uint32) (constraint.ConstraintSystem, error) {
+func R1CSInclusion(treeDepth uint32, numberOfUtxos uint32) (constraint.ConstraintSystem, error) {
 	root := make([]frontend.Variable, numberOfUtxos)
 	leaf := make([]frontend.Variable, numberOfUtxos)
 	inPathIndices := make([]frontend.Variable, numberOfUtxos)
@@ -51,7 +51,7 @@ func R1CSInsertion(treeDepth uint32, numberOfUtxos uint32) (constraint.Constrain
 		inPathElements[i] = make([]frontend.Variable, treeDepth)
 	}
 
-	circuit := InsertionCircuit{
+	circuit := InclusionCircuit{
 		Depth:          int(treeDepth),
 		NumberOfUtxos:  int(numberOfUtxos),
 		Root:           root,
@@ -62,8 +62,8 @@ func R1CSInsertion(treeDepth uint32, numberOfUtxos uint32) (constraint.Constrain
 	return frontend.Compile(ecc.BN254.ScalarField(), r1cs.NewBuilder, &circuit)
 }
 
-func SetupInsertion(treeDepth uint32, numberOfUtxos uint32) (*ProvingSystem, error) {
-	ccs, err := R1CSInsertion(treeDepth, numberOfUtxos)
+func SetupInclusion(treeDepth uint32, numberOfUtxos uint32) (*ProvingSystem, error) {
+	ccs, err := R1CSInclusion(treeDepth, numberOfUtxos)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func SetupInsertion(treeDepth uint32, numberOfUtxos uint32) (*ProvingSystem, err
 	return &ProvingSystem{treeDepth, numberOfUtxos, pk, vk, ccs}, nil
 }
 
-func (ps *ProvingSystem) ProveInsertion(params *InsertionParameters) (*Proof, error) {
+func (ps *ProvingSystem) ProveInclusion(params *InclusionParameters) (*Proof, error) {
 	if err := params.ValidateShape(ps.TreeDepth, ps.NumberOfUtxos); err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (ps *ProvingSystem) ProveInsertion(params *InsertionParameters) (*Proof, er
 		}
 	}
 
-	assignment := InsertionCircuit{
+	assignment := InclusionCircuit{
 		Root:           root,
 		Leaf:           leaf,
 		InPathIndices:  inPathIndices,
@@ -115,7 +115,7 @@ func (ps *ProvingSystem) ProveInsertion(params *InsertionParameters) (*Proof, er
 	return &Proof{proof}, nil
 }
 
-func (ps *ProvingSystem) VerifyInsertion(root []big.Int, leaf []big.Int, proof *Proof) error {
+func (ps *ProvingSystem) VerifyInclusion(root []big.Int, leaf []big.Int, proof *Proof) error {
 	leafArray := make([]frontend.Variable, ps.NumberOfUtxos)
 	for i, v := range leaf {
 		leafArray[i] = v
@@ -126,7 +126,7 @@ func (ps *ProvingSystem) VerifyInsertion(root []big.Int, leaf []big.Int, proof *
 		rootArray[i] = v
 	}
 
-	publicAssignment := InsertionCircuit{
+	publicAssignment := InclusionCircuit{
 		Leaf: leafArray,
 		Root: rootArray,
 	}

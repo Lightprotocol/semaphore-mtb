@@ -7,7 +7,7 @@ import (
 	"github.com/reilabs/gnark-lean-extractor/v2/abstractor"
 )
 
-type InsertionCircuit struct {
+type InclusionCircuit struct {
 	// public inputs
 	Root []frontend.Variable `gnark:",public"`
 	Leaf []frontend.Variable `gnark:",public"`
@@ -20,7 +20,7 @@ type InsertionCircuit struct {
 	Depth         int
 }
 
-func (circuit *InsertionCircuit) Define(api frontend.API) error {
+func (circuit *InclusionCircuit) Define(api frontend.API) error {
 	for i := 0; i < circuit.NumberOfUtxos; i++ {
 		api.AssertIsEqual(circuit.Root[i], circuit.Root[i])
 		api.AssertIsEqual(circuit.Leaf[i], circuit.Leaf[i])
@@ -31,7 +31,7 @@ func (circuit *InsertionCircuit) Define(api frontend.API) error {
 	}
 
 	// Actual merkle proof verification.
-	_ = abstractor.Call1(api, InsertionProof{
+	_ = abstractor.Call1(api, InclusionProof{
 		Root:           circuit.Root,
 		Leaf:           circuit.Leaf,
 		InPathElements: circuit.InPathElements,
@@ -44,7 +44,7 @@ func (circuit *InsertionCircuit) Define(api frontend.API) error {
 	return nil
 }
 
-func ImportInsertionSetup(treeDepth uint32, numberOfUtxos uint32, pkPath string, vkPath string) (*ProvingSystem, error) {
+func ImportInclusionSetup(treeDepth uint32, numberOfUtxos uint32, pkPath string, vkPath string) (*ProvingSystem, error) {
 	root := make([]frontend.Variable, numberOfUtxos)
 	leaf := make([]frontend.Variable, numberOfUtxos)
 	inPathIndices := make([]frontend.Variable, numberOfUtxos)
@@ -54,7 +54,7 @@ func ImportInsertionSetup(treeDepth uint32, numberOfUtxos uint32, pkPath string,
 		inPathElements[i] = make([]frontend.Variable, treeDepth)
 	}
 
-	circuit := InsertionCircuit{
+	circuit := InclusionCircuit{
 		Depth:          int(treeDepth),
 		NumberOfUtxos:  int(numberOfUtxos),
 		Root:           root,

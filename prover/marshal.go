@@ -195,24 +195,24 @@ func ReadSystemFromFile(path string) (ps *ProvingSystem, err error) {
 	return
 }
 
-type InsertionParametersJSON struct {
+type InclusionParametersJSON struct {
 	Root           []string   `json:"root"`
 	InPathIndices  []uint32   `json:"inPathIndices"`
 	InPathElements [][]string `json:"inPathElements"`
 	Leaf           []string   `json:"leaf"`
 }
 
-func ParseInput(inputJSON string) (InsertionParameters, error) {
-	var proofData InsertionParameters
+func ParseInput(inputJSON string) (InclusionParameters, error) {
+	var proofData InclusionParameters
 	err := json.Unmarshal([]byte(inputJSON), &proofData)
 	if err != nil {
-		return InsertionParameters{}, fmt.Errorf("error parsing JSON: %v", err)
+		return InclusionParameters{}, fmt.Errorf("error parsing JSON: %v", err)
 	}
 	return proofData, nil
 }
 
-func (p *InsertionParameters) MarshalJSON() ([]byte, error) {
-	paramsJson := InsertionParametersJSON{}
+func (p *InclusionParameters) MarshalJSON() ([]byte, error) {
+	paramsJson := InclusionParametersJSON{}
 
 	paramsJson.Root = make([]string, len(p.Root))
 	for i := 0; i < len(p.Root); i++ {
@@ -240,9 +240,9 @@ func (p *InsertionParameters) MarshalJSON() ([]byte, error) {
 	return json.Marshal(paramsJson)
 }
 
-func (p *InsertionParameters) UnmarshalJSON(data []byte) error {
+func (p *InclusionParameters) UnmarshalJSON(data []byte) error {
 
-	var params InsertionParametersJSON
+	var params InclusionParametersJSON
 
 	err := json.Unmarshal(data, &params)
 	if err != nil {

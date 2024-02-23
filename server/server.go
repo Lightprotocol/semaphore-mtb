@@ -104,7 +104,7 @@ func (handler proveHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var proof *prover.Proof
-	var params prover.InsertionParameters
+	var params prover.InclusionParameters
 
 	err = json.Unmarshal(buf, &params)
 	if err != nil {
@@ -126,7 +126,7 @@ func (handler proveHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	proof, err = ps.ProveInsertion(&params)
+	proof, err = ps.ProveInclusion(&params)
 
 	if err != nil {
 		provingError(err).send(w)
