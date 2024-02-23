@@ -2,15 +2,9 @@ module light/light-prover
 
 go 1.21
 
-require golang.org/x/mobile v0.0.0-20240213143359-d1f7d3436075
-
-//require github.com/fermyon/spin/sdk/go/v2 v2.2.0
-//require github.com/julienschmidt/httprouter v1.3.0 // indirect
-
 require (
 	github.com/consensys/gnark v0.8.0
 	github.com/iden3/go-iden3-crypto v0.0.13
-	//github.com/prometheus/client_golang v1.14.0
 	github.com/reilabs/gnark-lean-extractor/v2 v2.1.0
 	github.com/urfave/cli/v2 v2.10.2
 )
