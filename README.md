@@ -53,16 +53,16 @@ This part explains the existing cli commands.
 ## Running
 ```shell
 go build .
-light-prover --keys-file path/to/keys/file
+light-prover --config path/to/config/file
 ```
 
 ## Docker
 ```shell
 docker build -t light-prover .
 
-# /host/path/to/keys should contain the keys file
+# /host/path/to/keys should contain the config file
 docker run -it \
-    --mount type=bind,source=host/path/to/keys,target=/keys \
+    --mount type=bind,source=host/path/to/config,target=/config \
     -p 3001:3001 \
     light-prover
 ```
@@ -73,7 +73,7 @@ light-prover:
     # Path to the repo root directory
     build: ./light-prover
     volumes:
-        - /host/path/to/keys:/keys
+        - /host/path/to/config:/config
     ports:
         # Server
         - "3001:3001"
